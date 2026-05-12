@@ -92,10 +92,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # ✅ context pointe vers le dossier de chaque service
       - name: Build & Push order-service
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./order-service
           file: ./order-service/Dockerfile
           push: true
           tags: |
@@ -105,7 +106,7 @@ jobs:
       - name: Build & Push kitchen-service
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./kitchen-service
           file: ./kitchen-service/Dockerfile
           push: true
           tags: |
@@ -115,7 +116,7 @@ jobs:
       - name: Build & Push accounting-service
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./accounting-service
           file: ./accounting-service/Dockerfile
           push: true
           tags: |
@@ -125,7 +126,7 @@ jobs:
       - name: Build & Push order-orchestrator
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./order-orchestrator
           file: ./order-orchestrator/Dockerfile
           push: true
           tags: |
@@ -135,7 +136,7 @@ jobs:
       - name: Build & Push frontend
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./frontend
           file: ./frontend/Dockerfile
           push: true
           tags: |
@@ -145,3 +146,8 @@ jobs:
       - name: Pipeline Summary
         run: |
           echo "✅ All images pushed to Docker Hub"
+          echo "  - ${{ secrets.DOCKER_USERNAME }}/gourmet-go-order-service:latest"
+          echo "  - ${{ secrets.DOCKER_USERNAME }}/gourmet-go-kitchen-service:latest"
+          echo "  - ${{ secrets.DOCKER_USERNAME }}/gourmet-go-accounting-service:latest"
+          echo "  - ${{ secrets.DOCKER_USERNAME }}/gourmet-go-order-orchestrator:latest"
+          echo "  - ${{ secrets.DOCKER_USERNAME }}/gourmet-go-frontend:latest"
