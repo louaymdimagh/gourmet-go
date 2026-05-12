@@ -92,11 +92,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # ✅ context pointe vers le dossier de chaque service
+      # ✅ Java services use root context (.) because Dockerfiles reference proto/ and service subdirs
       - name: Build & Push order-service
         uses: docker/build-push-action@v5
         with:
-          context: ./order-service
+          context: .
           file: ./order-service/Dockerfile
           push: true
           tags: |
@@ -106,7 +106,7 @@ jobs:
       - name: Build & Push kitchen-service
         uses: docker/build-push-action@v5
         with:
-          context: ./kitchen-service
+          context: .
           file: ./kitchen-service/Dockerfile
           push: true
           tags: |
@@ -116,7 +116,7 @@ jobs:
       - name: Build & Push accounting-service
         uses: docker/build-push-action@v5
         with:
-          context: ./accounting-service
+          context: .
           file: ./accounting-service/Dockerfile
           push: true
           tags: |
@@ -126,7 +126,7 @@ jobs:
       - name: Build & Push order-orchestrator
         uses: docker/build-push-action@v5
         with:
-          context: ./order-orchestrator
+          context: .
           file: ./order-orchestrator/Dockerfile
           push: true
           tags: |
