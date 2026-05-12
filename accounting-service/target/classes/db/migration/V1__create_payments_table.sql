@@ -1,0 +1,7 @@
+CREATE TABLE payments (
+    id BIGSERIAL PRIMARY KEY,
+    payment_id VARCHAR(255) UNIQUE NOT NULL,
+    order_id VARCHAR(255) UNIQUE NOT NULL,
+    amount DOUBLE PRECISION NOT NULL,
+    status VARCHAR(50) NOT NULL
+);

@@ -1,0 +1,6 @@
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    order_id VARCHAR(255) UNIQUE NOT NULL,
+    amount DOUBLE PRECISION NOT NULL,
+    status VARCHAR(50) NOT NULL
+);

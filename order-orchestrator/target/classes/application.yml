@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: order-orchestrator
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://${ZIPKIN_HOST:localhost}:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,tracing
+
+grpc:
+  client:
+    order-service:
+      address: static://${ORDER_SERVICE_HOST:localhost}:9091
+      negotiation-type: plaintext
+    kitchen-service:
+      address: static://${KITCHEN_SERVICE_HOST:localhost}:9092
+      negotiation-type: plaintext
+    accounting-service:
+      address: static://${ACCOUNTING_SERVICE_HOST:localhost}:9093
+      negotiation-type: plaintext

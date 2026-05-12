@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package order;
+
+option java_multiple_files = true;
+option java_package = "com.gourmetgo.grpc.order";
+option java_outer_classname = "OrderProto";
+
+service OrderService {
+  rpc CreateOrder (CreateOrderRequest) returns (OrderResponse);
+  rpc UpdateOrderStatus (UpdateOrderStatusRequest) returns (OrderResponse);
+  rpc GetOrder (GetOrderRequest) returns (OrderResponse);
+  rpc GetAllOrders (GetAllOrdersRequest) returns (GetAllOrdersResponse);
+}
+
+message CreateOrderRequest {
+  string order_id = 1;
+  double amount = 2;
+}
+
+message UpdateOrderStatusRequest {
+  string order_id = 1;
+  string status = 2;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message GetAllOrdersRequest {}
+
+message OrderResponse {
+  string order_id = 1;
+  double amount = 2;
+  string status = 3;
+  string message = 4;
+  bool success = 5;
+}
+
+message GetAllOrdersResponse {
+  repeated OrderResponse orders = 1;
+}

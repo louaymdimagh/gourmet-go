@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gourmet-Go Order System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #e8621a, #c94b0a); color: white; padding: 20px 40px; }
+    .header h1 { font-size: 1.8rem; }
+    .header p { opacity: 0.85; margin-top: 4px; }
+    .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+    .card { background: white; border-radius: 12px; padding: 28px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 1.2rem; color: #333; margin-bottom: 20px; border-bottom: 2px solid #e8621a; padding-bottom: 10px; }
+    .form-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 6px; }
+    input { width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: border 0.2s; }
+    input:focus { outline: none; border-color: #e8621a; }
+    button { background: #e8621a; color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #c94b0a; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-secondary { background: #555; }
+    .btn-secondary:hover { background: #333; }
+    .alert { padding: 14px 18px; border-radius: 8px; margin-top: 16px; font-weight: 500; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { background: #f8f9fa; padding: 10px 14px; text-align: left; font-size: 0.85rem; color: #666; border-bottom: 2px solid #e0e0e0; }
+    td { padding: 12px 14px; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
+    tr:hover td { background: #fafafa; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .badge-approved { background: #d4edda; color: #155724; }
+    .badge-rejected { background: #f8d7da; color: #721c24; }
+    .badge-pending { background: #fff3cd; color: #856404; }
+    .loading { display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .api-url { font-size: 0.75rem; color: #999; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>🍽️ Gourmet-Go Order System</h1>
+  <p>Distributed Microservices with Saga Orchestration Pattern</p>
+</div>
+
+<div class="container">
+  <!-- Create Order -->
+  <div class="card">
+    <h2>📝 Create New Order</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Order ID</label>
+        <input id="orderId" type="text" placeholder="e.g. ORDER-001" />
+      </div>
+      <div class="form-group">
+        <label>Amount (€)</label>
+        <input id="amount" type="number" placeholder="e.g. 45.00" step="0.01" min="0.01" />
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button id="submitBtn" onclick="createOrder()">🚀 Place Order</button>
+      <span style="font-size:0.85rem; color:#888;">Amount &gt; 1000€ → triggers compensation path</span>
+    </div>
+    <div id="createResult"></div>
+    <p class="api-url">POST /api/orders → Orchestrator → Saga</p>
+  </div>
+
+  <!-- Check Order Status -->
+  <div class="card">
+    <h2>🔍 Check Order Status</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Order ID</label>
+        <input id="checkOrderId" type="text" placeholder="e.g. ORDER-001" />
+      </div>
+    </div>
+    <button onclick="checkOrder()">🔎 Check Status</button>
+    <div id="checkResult"></div>
+  </div>
+
+  <!-- All Orders -->
+  <div class="card">
+    <h2>📋 All Orders</h2>
+    <button onclick="loadOrders()">🔄 Refresh Orders</button>
+    <div id="ordersTable" style="margin-top:16px;">
+      <p style="color:#999; font-style:italic;">Click "Refresh Orders" to load</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = window.API_BASE || 'http://localhost:8080';
+
+  async function createOrder() {
+    const orderId = document.getElementById('orderId').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const btn = document.getElementById('submitBtn');
+    const resultDiv = document.getElementById('createResult');
+
+    if (!orderId || isNaN(amount) || amount <= 0) {
+      resultDiv.innerHTML = '<div class="alert alert-error">⚠️ Please enter a valid Order ID and Amount</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading">⏳</span> Processing Saga...';
+    resultDiv.innerHTML = '<div class="alert alert-info">⏳ Executing Saga: Order → Kitchen → Payment...</div>';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, amount })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        resultDiv.innerHTML = `
+          <div class="alert alert-success">
+            ✅ <strong>APPROVED!</strong><br>
+            Order <strong>${data.orderId}</strong> successfully processed.<br>
+            Status: <strong>${data.status}</strong>
+          </div>`;
+      } else {
+        resultDiv.innerHTML = `
+          <div class="alert alert-error">
+            ❌ <strong>REJECTED (Compensation triggered)</strong><br>
+            ${data.message}<br>
+            Status: <strong>${data.status}</strong>
+          </div>`;
+      }
+    } catch (e) {
+      resultDiv.innerHTML = `<div class="alert alert-error">🔌 Connection error: ${e.message}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '🚀 Place Order';
+    }
+  }
+
+  async function checkOrder() {
+    const orderId = document.getElementById('checkOrderId').value.trim();
+    const resultDiv = document.getElementById('checkResult');
+    if (!orderId) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/orders/${orderId}`);
+      const data = await res.json();
+
+      if (data.success) {
+        const badgeClass = data.status === 'APPROVED' ? 'badge-approved' :
+                           data.status === 'REJECTED' ? 'badge-rejected' : 'badge-pending';
+        resultDiv.innerHTML = `
+          <div class="alert alert-info" style="margin-top:12px;">
+            Order: <strong>${data.orderId}</strong> | 
+            Amount: <strong>€${data.amount}</strong> | 
+            Status: <span class="badge ${badgeClass}">${data.status}</span>
+          </div>`;
+      } else {
+        resultDiv.innerHTML = `<div class="alert alert-error">Order not found: ${orderId}</div>`;
+      }
+    } catch (e) {
+      resultDiv.innerHTML = `<div class="alert alert-error">Connection error: ${e.message}</div>`;
+    }
+  }
+
+  async function loadOrders() {
+    const div = document.getElementById('ordersTable');
+    div.innerHTML = '<p style="color:#999;">Loading...</p>';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/orders`);
+      const orders = await res.json();
+
+      if (orders.length === 0) {
+        div.innerHTML = '<p style="color:#999; font-style:italic;">No orders yet.</p>';
+        return;
+      }
+
+      let html = `<table>
+        <thead><tr><th>Order ID</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>`;
+      for (const o of orders) {
+        const badgeClass = o.status === 'APPROVED' ? 'badge-approved' :
+                           o.status === 'REJECTED' ? 'badge-rejected' : 'badge-pending';
+        html += `<tr>
+          <td>${o.orderId}</td>
+          <td>€${o.amount}</td>
+          <td><span class="badge ${badgeClass}">${o.status}</span></td>
+        </tr>`;
+      }
+      html += '</tbody></table>';
+      div.innerHTML = html;
+    } catch (e) {
+      div.innerHTML = `<div class="alert alert-error">Connection error: ${e.message}</div>`;
+    }
+  }
+
+  // Auto-generate order ID helper
+  document.getElementById('orderId').value = 'ORDER-' + Date.now().toString().slice(-5);
+</script>
+</body>
+</html>

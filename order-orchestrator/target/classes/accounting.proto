@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package accounting;
+
+option java_multiple_files = true;
+option java_package = "com.gourmetgo.grpc.accounting";
+option java_outer_classname = "AccountingProto";
+
+service AccountingService {
+  rpc AuthorizePayment (AuthorizePaymentRequest) returns (PaymentResponse);
+  rpc CancelPayment (CancelPaymentRequest) returns (PaymentResponse);
+}
+
+message AuthorizePaymentRequest {
+  string order_id = 1;
+  double amount = 2;
+}
+
+message CancelPaymentRequest {
+  string order_id = 1;
+}
+
+message PaymentResponse {
+  string payment_id = 1;
+  string order_id = 2;
+  string status = 3;
+  string message = 4;
+  bool success = 5;
+}
